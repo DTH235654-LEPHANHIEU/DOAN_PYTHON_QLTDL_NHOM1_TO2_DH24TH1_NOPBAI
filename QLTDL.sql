@@ -89,38 +89,62 @@ CREATE TABLE CHUYENDI (
     CONSTRAINT PK_CHUYENDI PRIMARY KEY (MaChuyenDi)
 );
 
--- -----------------------------------------------------
--- Bảng 7: THANHTOAN
--- -----------------------------------------------------
+-- =============================================
+-- 7. THANHTOAN
+-- =============================================
 CREATE TABLE THANHTOAN (
-    MaThanhToan INT IDENTITY(1,1),
-    MaTuyen CHAR(5),
-    MaDichVu CHAR(5),
+    MaThanhToan INT IDENTITY(1,1) PRIMARY KEY,
+    MaTuyen CHAR(5) NOT NULL,
+    MaDichVu CHAR(5) NOT NULL,
     PhuongThuc NVARCHAR(20) CHECK (PhuongThuc IN (N'Tiền mặt', N'Chuyển khoản')),
     NgayThanhToan DATETIME,
     SoTien DECIMAL(18,2) NOT NULL,
-    TrangThaiDat NVARCHAR(50) CHECK(TrangThaiDat IN (N'Đã thanh toán',N'Chưa thanh toán')),
-    CONSTRAINT PK_THANHTOAN PRIMARY KEY (MaThanhToan)
+    TrangThaiDat NVARCHAR(50) CHECK (TrangThaiDat IN (N'Thành công', N'Thất bại'))
 );
 
+-- =============================================
+-- 8. DATCHO
+-- =============================================
+CREATE TABLE DATCHO (
+    MaDatCho INT IDENTITY(1,1) PRIMARY KEY,
+    MaKhachHang CHAR(5) NOT NULL,
+    MaChuyenDi INT NOT NULL,
+    SoLuongNguoiLon INT CHECK (SoLuongNguoiLon >= 0),
+    SoLuongTreEm INT CHECK (SoLuongTreEm >= 0),
+    TongTien DECIMAL(18,2) NOT NULL,
+    NgayDat DATETIME DEFAULT GETDATE(),
+    MaThanhToan INT NULL
+);
 -- -----------------------------------------------------
 -- Khóa ngoại (FOREIGN KEY) được khai báo ngoài
 -- -----------------------------------------------------
+-- TUYENDULICH
 ALTER TABLE TUYENDULICH
-ADD CONSTRAINT FK_TUYENDULICH_DIADIEM FOREIGN KEY (MaDiaDiem)
-REFERENCES DIADIEM(MaDiaDiem);
+ADD CONSTRAINT FK_TUYENDULICH_DIADIEM FOREIGN KEY (MaDiaDiem) REFERENCES DIADIEM(MaDiaDiem);
 
 ALTER TABLE TUYENDULICH
-ADD CONSTRAINT FK_TUYENDULICH_DICHVU FOREIGN KEY (MaDichVu)
-REFERENCES DICHVU(MaDichVu);
+ADD CONSTRAINT FK_TUYENDULICH_DICHVU FOREIGN KEY (MaDichVu) REFERENCES DICHVU(MaDichVu);
 
+-- CHUYENDI
 ALTER TABLE CHUYENDI
-ADD CONSTRAINT FK_CHUYENDI_TUYENDULICH FOREIGN KEY (MaTuyen)
-REFERENCES TUYENDULICH(MaTuyen);
+ADD CONSTRAINT FK_CHUYENDI_TUYENDULICH FOREIGN KEY (MaTuyen) REFERENCES TUYENDULICH(MaTuyen);
+
+-- THANHTOAN
+ALTER TABLE THANHTOAN
+ADD CONSTRAINT FK_THANHTOAN_TUYENDULICH FOREIGN KEY (MaTuyen) REFERENCES TUYENDULICH(MaTuyen);
 
 ALTER TABLE THANHTOAN
-ADD CONSTRAINT FK_THANHTOAN_DICHVU FOREIGN KEY (MaDichVu)
-REFERENCES DICHVU(MaDichVu);
+ADD CONSTRAINT FK_THANHTOAN_DICHVU FOREIGN KEY (MaDichVu) REFERENCES DICHVU(MaDichVu);
+
+-- DATCHO
+ALTER TABLE DATCHO
+ADD CONSTRAINT FK_DATCHO_KHACHHANG FOREIGN KEY (MaKhachHang) REFERENCES KHACHHANG(MaKhachHang);
+
+ALTER TABLE DATCHO
+ADD CONSTRAINT FK_DATCHO_CHUYENDI FOREIGN KEY (MaChuyenDi) REFERENCES CHUYENDI(MaChuyenDi);
+
+ALTER TABLE DATCHO
+ADD CONSTRAINT FK_DATCHO_THANHTOAN FOREIGN KEY (MaThanhToan) REFERENCES THANHTOAN(MaThanhToan);
 
 
 --Dữ liệu
@@ -173,7 +197,7 @@ INSERT INTO TUYENDULICH (HinhAnh, MaTuyen, TenTuyen, MaDiaDiem, SoNgay, MoTa, Ng
 (NULL, 'T011', N'Tour Đà Nẵng - Hội An', 2, 3, N'Khám phá Bà Nà Hills và Phố cổ Hội An', '2025-11-05', '2025-11-07', 'DV011'),
 (NULL, 'T012', N'Tour Du thuyền Hạ Long', 3, 2, N'Ngủ đêm trên vịnh, chèo Kayak', '2025-10-15', '2025-10-16', 'DV012'),
 (NULL, 'T013', N'Tour Đà Lạt Săn Mây', 4, 3, N'Cắm trại, săn mây Cầu Đất, Lang Biang', '2025-09-18', '2025-09-20', 'DV013'),
-(NULL, 'T014', N'Tour Nha Trang Biển Đảo', 5, 5, N'Lặn ngắm san hô, tắm bùn khoáng', '2025-08-22', '2025-08-24', 'DV014');
+(NULL, 'T014', N'Tour Nha Trang Biển Đảo', 5, 5, N'Lặn ngắm san hô, tắm bùn khoáng', '2025-08-22', '2025-08-26', 'DV014');
 
 -- =============================================
 -- 6. CHUYENDI
@@ -189,12 +213,22 @@ INSERT INTO CHUYENDI (MaTuyen, GiaNguoiLon, GiaTreEm, SoChoToiDa, SoChoConLai) V
 -- 7. THANHTOAN
 -- =============================================
 INSERT INTO THANHTOAN (MaTuyen, MaDichVu, PhuongThuc, NgayThanhToan, SoTien, TrangThaiDat) VALUES
-('T010', 'DV010', N'Chuyển khoản', '2025-12-01', 15000000, N'Thành công'),
-('T011', 'DV011', N'Tiền mặt', '2025-10-25', 8000000, N'Thành công'),
-('T012', 'DV012', N'Chuyển khoản', '2025-10-02', 16000000, N'Thành công'),
-('T013', 'DV013', N'Chuyển khoản', '2025-09-10', 10300000, N'Thành công'),
-('T014', 'DV014', N'Tiền mặt', NULL, 0, N'Thất bại');
-GO
+('T010', 'DV010', N'Chuyển khoản', '2025-12-01', 15000000, N'Đã thanh toán'),
+('T011', 'DV011', N'Tiền mặt', '2025-10-25', 8000000, N'Đã thanh toán'),
+('T012', 'DV012', N'Chuyển khoản', '2025-10-02', 16000000, N'Đã thanh toán'),
+('T013', 'DV013', N'Chuyển khoản', '2025-09-10', 10300000, N'Đã thanh toán'),
+('T014', 'DV014', N'Tiền mặt', NULL, 0, N'Chưa thanh toán');
+
+-- =============================================
+-- 8. DATCHO
+-- =============================================
+INSERT INTO DATCHO (MaKhachHang, MaChuyenDi, SoLuongNguoiLon, SoLuongTreEm, TongTien, MaThanhToan) VALUES
+('KH010', 1, 2, 1, 31000000, 1),
+('KH011', 2, 1, 2, 17000000, 2),
+('KH012', 3, 2, 0, 10000000, 3),
+('KH013', 4, 1, 1, 14100000, 4),
+('KH014', 5, 3, 1, 25000000, 5);
+
 
 SELECT * FROM TUYENDULICH
 SELECT * FROM DIADIEM

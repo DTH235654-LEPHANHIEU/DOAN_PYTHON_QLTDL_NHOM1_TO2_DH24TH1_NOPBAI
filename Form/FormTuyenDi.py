@@ -1,6 +1,6 @@
 from customtkinter import *
 from tkinter import messagebox, ttk
-from Form import BaseForm
+from Form import BaseForm, FormDatCho
 
 class Create_TuyenDi(CTkFrame):
     def __init__(self, parent):
@@ -107,9 +107,10 @@ class Create_TuyenDi(CTkFrame):
     
 #Các thao tác thêm xóa sửa lưu
     #Đặt chỗ
-        self.btn_DatCho = CTkButton(self.frameTop, width=70, height=25, text="➕ Đặt chỗ",
-                                  fg_color="#1D8D13", font=("Segoe UI", 14, "bold"))
-        self.btn_DatCho.place(x=20, y = 330)
+        if BaseForm.UserSession.is_user():
+            self.btn_DatCho = CTkButton(self.frameTop, width=70, height=25, text="➕ Đặt chỗ",
+                                    fg_color="#1D8D13", font=("Segoe UI", 14, "bold"), command=self.open_form_dat_cho)
+            self.btn_DatCho.place(x=20, y = 330)
         if BaseForm.UserSession.is_admin():
     #Thêm
             self.btn_Them = CTkButton(self.frameTop, width=70, height=25, text="➕ Thêm",
@@ -160,4 +161,7 @@ class Create_TuyenDi(CTkFrame):
                 self.tree.insert("", "end", values=(ma_chuyen_di, ma_tuyen, ngay_khoi_hanh, gia, so_cho))
         else:
             print("Không có dữ liệu trong bảng CHUYENDI")
-        
+    def open_form_dat_cho(self):
+        # Tạo cửa sổ form mới
+        form = FormDatCho.Create_DatCho()
+        form.mainloop()  # nếu dùng CTk       

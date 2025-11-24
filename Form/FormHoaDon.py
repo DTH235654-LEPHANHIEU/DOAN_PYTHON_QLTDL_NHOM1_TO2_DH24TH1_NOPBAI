@@ -96,6 +96,17 @@ class Create_HoaDon(CTkFrame):
         self.lb_NgaySinh.place(x=400, y = 180)
         self.entry_NgaySinh = DateEntry(self.frameTop, width=38, height=20, date_pattern="dd/mm/yyyy")
         self.entry_NgaySinh.place(x=510, y=185) 
+    #SoNguoiLon   
+        self.lb_SoNguoiLon = CTkLabel(self.frameTop, text= "Số người lớn", font=("Segoe UI", 14))
+        self.lb_SoNguoiLon.place(x=400, y = 220)
+        self.entry_SoNguoiLon = CTkEntry(self.frameTop, width=100, height=20)
+        self.entry_SoNguoiLon.place(x=490, y=222) 
+    #SoTreEm   
+        self.SoTreEm = CTkLabel(self.frameTop, text= "Số trẻ em", font=("Segoe UI", 14))
+        self.SoTreEm.place(x=600, y = 220)
+        self.entry_SoTreEm = CTkEntry(self.frameTop, width=100, height=20)
+        self.entry_SoTreEm.place(x=670, y=222) 
+  
 
     
 #Các thao tác thêm xóa sửa lưu
