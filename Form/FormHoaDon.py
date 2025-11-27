@@ -7,7 +7,7 @@ class Create_HoaDon(CTkFrame):
     def __init__(self, parent):
         super().__init__(parent, fg_color="#FFFFFF")
         
-        self.db = BaseForm.ConectionDatabase()
+        self.db = BaseForm.ConnectionDatabase()
         self.Create_frameBottom()
         self.Create_frameTop()
         self.load_data()

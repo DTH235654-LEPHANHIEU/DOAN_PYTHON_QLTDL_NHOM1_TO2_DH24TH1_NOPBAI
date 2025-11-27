@@ -3,7 +3,7 @@ from tkinter import messagebox
 import pyodbc
 
 #Kết nối với Database
-class ConectionDatabase:
+class ConnectionDatabase:
     def __init__(self):
         try:
             self.conn = pyodbc.connect(
@@ -12,7 +12,8 @@ class ConectionDatabase:
                 "Database=QLTDL;"
                 "Trusted_Connection=yes;"
             )
-            self.cursor = self.conn.cursor()   
+            self.cursor = self.conn.cursor() 
+            self.cursor.fast_executemany()  
         except Exception as e:
             print(e)
     
@@ -39,6 +40,9 @@ class ConectionDatabase:
         except Exception as e:
             print(e)
             return False
+    def close(self):
+        """Đóng kết nối khi không dùng nữa"""
+        self.conn.close()
 #Lưu thông tin người dùng hiện tại
 class UserSession:
     current_user = None

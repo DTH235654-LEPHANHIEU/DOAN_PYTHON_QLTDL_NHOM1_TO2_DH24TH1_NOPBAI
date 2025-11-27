@@ -15,9 +15,10 @@ class Create_DangNhap:
         self.root.resizable(False, False)
         set_appearance_mode("light")
         BaseForm.center_window(self.root)
+        self.db = BaseForm.ConnectionDatabase()
 
-        self.Folder = Path("D:\\CNTT\\Năm 3 - Kì 1\\Python\\DoAn\\DOAN_PYTHON\\Anh")
-
+        current_dir = Path(__file__).parent.resolve()
+        self.Folder = current_dir.parent / "Anh"
         self.create_widgets()
 
     # TẠO GIAO DIỆN
@@ -28,7 +29,12 @@ class Create_DangNhap:
         imgNen = imgNen.resize((250, 400))
         self.photo_Nen = ImageTk.PhotoImage(imgNen)
 
-        self.Label_imgNen = CTkLabel(self.root, image=self.photo_Nen, width=250, height=400, text=" ")
+        self.photo_Nen = CTkImage(light_image=imgNen,
+                                dark_image=imgNen,
+                                size=(250, 400))  # kích thước mong muốn
+
+        # Gán vào CTkLabel
+        self.Label_imgNen = CTkLabel(self.root, image=self.photo_Nen, text=" ")
         self.Label_imgNen.place(x=0, y=0)
 
         # ===== TEXT =====
@@ -115,11 +121,10 @@ class Create_DangNhap:
             messagebox.showwarning("Thông báo", "Tài khoản hoặc mật khẩu chưa được nhập")
             return
         try:
-            db = BaseForm.ConectionDatabase()
             sql = "SELECT * FROM TAIKHOAN WHERE TenDangNhap = ? AND MatKhau = ?"
             params=(username, password)
             
-            result = db.query(sql, params)
+            result = self.db.query(sql, params)
             if result:
                 user_role = "admin" if username.lower() == "admin" else "User"
                 #lưu thông tin người dùng
@@ -131,6 +136,7 @@ class Create_DangNhap:
                 # Mở Dashboard
                 from Form import FormDashboard
                 FormDashboard.FormDashboard(self.root)
+                self.db.close()
             else:
                 # Nếu result rỗng => Sai thông tin
                 messagebox.showerror("Lỗi", "Tên đăng nhập hoặc mật khẩu không đúng!")           
@@ -143,4 +149,5 @@ class Create_DangNhap:
     def Thoat(self):
         result = messagebox.askyesno("Thông báo", "Bạn có muốn thoát")
         if result:
+            self.db.close()
             self.root.destroy()

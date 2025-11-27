@@ -1,6 +1,7 @@
 from customtkinter import *
 from tkinter import messagebox
-from Form import BaseForm, FormTuyenDi, FormKhachHang, FormDangNhap, FormDichVu, FormHoaDon, FormTrangChu
+from Form import FormDatChoAD
+from Form import BaseForm, FormTuyenDi, FormKhachHang, FormDangNhap, FormHoaDon, FormTrangChu
 
 
 class FormDashboard(CTkFrame):
@@ -140,7 +141,7 @@ class FormDashboard(CTkFrame):
         self.clear_content()
         if self.current_page is not None:
             self.current_page.destroy()
-        self.current_page = FormDichVu.Create_DichVu(self.frame_content)
+        self.current_page = FormDatChoAD.Create_DichVu(self.frame_content)
         self.current_page.pack(fill="both", expand=True)
 
     def logout(self, b):
@@ -160,5 +161,5 @@ class FormDashboard(CTkFrame):
     # XÓA FRAME NỘI DUNG MỖI KHI ĐỔI TRANG
     # ----------------------------------------
     def clear_content(self):
-        for w in self.frame_content.winfo_children():
+        for w in self.frame_content.winfo_children():    
             w.destroy()
