@@ -16,7 +16,8 @@ class ConnectionDatabase:
             self.cursor.fast_executemany()  
         except Exception as e:
             print(e)
-    
+            
+#Thực hiện câu
     def query(self, sql, params=None):
         try:
             if params:
@@ -28,7 +29,7 @@ class ConnectionDatabase:
             print(e)
             return []
 
-    # INSERT – UPDATE – DELETE
+# INSERT – UPDATE – DELETE
     def execute(self, sql, params=None):
         try:
             if params:
@@ -43,6 +44,7 @@ class ConnectionDatabase:
     def close(self):
         """Đóng kết nối khi không dùng nữa"""
         self.conn.close()
+        
 #Lưu thông tin người dùng hiện tại
 class UserSession:
     current_user = None

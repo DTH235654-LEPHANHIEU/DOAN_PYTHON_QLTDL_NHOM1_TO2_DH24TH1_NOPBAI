@@ -1,7 +1,7 @@
 from customtkinter import *
 from tkinter import messagebox
 from Form import FormDatChoAD
-from Form import BaseForm, FormTuyenDi, FormKhachHang, FormDangNhap, FormHoaDon, FormTrangChu
+from Form import BaseForm, FormTuyenDi, FormKhachHang, FormDangNhap, FormHoaDon, FormTrangChu, FormNhanVien
 
 
 class FormDashboard(CTkFrame):
@@ -50,7 +50,8 @@ class FormDashboard(CTkFrame):
         self.btn_QuanLyHoaDon = self.create_menu_button("🧾  Hóa đơn", self.open_HoaDon)
         
         if BaseForm.UserSession.is_admin():
-            self.btn_QuanLyDichVu = self.create_menu_button("🛎  Dịch vụ", self.open_DichVu)
+            self.btn_QuanLyNhanVien = self.create_menu_button("👨‍💼  Nhân viên", self.open_NhanVien)
+            self.btn_QuanLyDichVu = self.create_menu_button("🛎  Đặt chỗ", self.open_DatCho_AD)
         self.btn_DangXuat = self.create_menu_button("📤  Đăng xuất", self.logout)
         
 
@@ -98,7 +99,6 @@ class FormDashboard(CTkFrame):
     def select_button(self, btn):
         for b in self.list_button:
             b.configure(fg_color="#242861", text_color="#D4D1D1")
-
         btn.configure(fg_color="#FFFFFF", text_color="#000000")
 
     # ----------------------------------------
@@ -136,12 +136,20 @@ class FormDashboard(CTkFrame):
         self.current_page = FormHoaDon.Create_HoaDon(self.frame_content)
         self.current_page.pack(fill="both", expand=True)
 
-    def open_DichVu(self, b):
+    def open_DatCho_AD(self, b):
         self.select_button(self.btn_QuanLyDichVu)
         self.clear_content()
         if self.current_page is not None:
             self.current_page.destroy()
-        self.current_page = FormDatChoAD.Create_DichVu(self.frame_content)
+        self.current_page = FormDatChoAD.Create_DatCho(self.frame_content)
+        self.current_page.pack(fill="both", expand=True)
+        
+    def open_NhanVien(self, b):
+        self.select_button(self.btn_QuanLyNhanVien)
+        self.clear_content()
+        if self.current_page is not None:
+            self.current_page.destroy()
+        self.current_page = FormNhanVien.Create_NhanVien(self.frame_content)
         self.current_page.pack(fill="both", expand=True)
 
     def logout(self, b):

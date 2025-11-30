@@ -1,6 +1,6 @@
 from customtkinter import *
 from tkinter import messagebox, ttk
-from Form import FormDatChoKH
+from Form import FormNhanVien
 from Form import BaseForm
 from tkcalendar import DateEntry
 from datetime import datetime
@@ -14,6 +14,11 @@ class Create_TuyenDi(CTkFrame):
         self.Create_frameTop()
         self.load_data()
         self.load_data_cbTimKiem()
+        
+        self.list_them = []
+        self.list_xoa = []
+        self.list_sua = []
+ 
  
 #--------------------------------------
 # TREE VIEW 
@@ -165,26 +170,27 @@ class Create_TuyenDi(CTkFrame):
             self.btn_Sua.place(x=190, y = 315)
     #Lưu 
         self.btn_Luu = CTkButton(self.frameTop, width=70, height=25, text="♻️ Lưu",
-                                        fg_color="#132F8D", font=("Segoe UI", 14, "bold"), command=self.Luu)
+                                    fg_color="#132F8D", font=("Segoe UI", 14, "bold"), command=self.Luu)
         self.btn_Luu.place(x=270, y = 315)   
 
     #--------------------------------------
     # CÁC HÀM CHỨC NĂNG CỦA CHƯƠNG TRÌNH
     #-------------------------------------- 
+
     def open_form_dat_cho(self):
         try:
-            form = FormDatChoKH.Create_DatCho()
+            form = FormNhanVien.Create_DatCho()
             form.mainloop()
         except Exception as e:
             print(f"Lỗi mở form đặt chỗ: {e}")
-    
+
     def load_data_cbTimKiem(self):
         list = ["Mã tuyến","Tên địa điểm", "Tên tuyến đi", "Số ngày"]
         self.cb_TimKiem.configure(values=[])
         self.cb_TimKiem.configure(values=list)
         if list:
             self.cb_TimKiem.set(list[0])
-                   
+
     def load_data(self):
             # 1. Xóa dữ liệu cũ trên bảng Treeview
             for item in self.tree.get_children():
@@ -242,7 +248,6 @@ class Create_TuyenDi(CTkFrame):
         self.entry_TenTuyen.delete(0, 'end')
         self.entry_TenDiaDiem.delete(0, "end")
         self.entry_Mota.delete(0, 'end')
-        # Bỏ cb_TenDichVu vì bảng mới đã xóa cột này
         self.entry_ChoToiDa.delete(0, 'end')
         self.entry_ChoDaDat.delete(0, 'end')
         self.entry_GiaNguoiLon.delete(0, 'end')
@@ -281,9 +286,11 @@ class Create_TuyenDi(CTkFrame):
                 messagebox.showwarning("Thông báo", f"Mã tour '{ma_tour}' đã tồn tại!")
                 return
         self.tree.insert("", "end", values=(ma_tour, ten_tour, dia_diem, mo_ta, ngay_khoihanh, cho_toida, cho_dadat, gia_nguoilon, gia_treem, thoi_luong))
+        ngay_khoihanh = date_obj.strftime("%Y%m%d")
+        self.list_them.append((ma_tour, ten_tour, dia_diem, mo_ta, ngay_khoihanh, cho_toida, cho_dadat, gia_nguoilon, gia_treem, thoi_luong))
         messagebox.showinfo("Thông báo", "Thêm tour thành công!")
         self.clear_entries()
-            
+
     def Xoa(self):
         selected = self.tree.selection()
         if not selected:
@@ -296,6 +303,7 @@ class Create_TuyenDi(CTkFrame):
             
         confirm = messagebox.askyesno("Xác nhận", f"Bạn có chắc muốn xóa Tour ID: {ma_tour}?")
         if confirm:
+            self.list_xoa.append(ma_tour)
             self.tree.delete(selected[0])
             messagebox.showinfo("Thông báo", "Xóa thành công")
             self.clear_entries()
@@ -338,68 +346,48 @@ class Create_TuyenDi(CTkFrame):
             messagebox.showwarning("Lỗi", "Tên tour không được để trống")
             return
         self.tree.item(item_id, values=(ma_tour_cu, ten_tour, dia_diem, mo_ta, ngay_khoihanh, cho_toida, cho_dadat, gia_nguoilon, gia_treem, thoi_luong))
+        #sql kh nhan dinh dang ngay dd-mm-yyyy(chuyen dinh dang)
+        ngay_khoihanh = date_obj.strftime("%Y%m%d")
+        self.list_sua.append((ma_tour_cu, ten_tour, dia_diem, mo_ta, ngay_khoihanh, cho_toida, cho_dadat, gia_nguoilon, gia_treem, thoi_luong))
         messagebox.showinfo("Thông báo", "Sửa tour thành công!")
-    
+
     def Luu(self):
         if not self.tree.get_children():
             messagebox.showwarning("Thông báo", "Không có dữ liệu để lưu!")
             return
         
         cursor = self.db.conn.cursor()
+        #INSERT
+        for row in self.list_them:
+            cursor.execute("""INSERT INTO TOUR 
+                              (MaTour, TenTour, DiaDiem, MoTa, NgayKhoiHanh,SoChoToiDa, SoChoDaDat, GiaNguoiLon, GiaTreEm, ThoiLuong)
+                              VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                              (row["MaTour"], row["TenTour"], row["DiaDiem"], row["MoTa"], row["NgayKhoiHanh"],
+                              row["SoChoToiDa"], row["SoChoDaDat"], row["GiaNguoiLon"], row["GiaTreEm"], row["ThoiLuong"]))
+        #UPDATE
+        for row in self.list_sua:
+            cursor.execute("""UPDATE TOUR SET
+                                TenTour = ?, DiaDiem = ?, MoTa = ?, NgayKhoiHanh = ?,
+                                SoChoToiDa = ?, SoChoDaDat = ?, GiaNguoiLon = ?, GiaTreEm = ?, ThoiLuong = ?
+                              WHERE MaTour = ?    
+                           """, 
+                           (row["TenTour"], row["DiaDiem"], row["MoTa"], row["NgayKhoiHanh"],
+                            row["SoChoToiDa"], row["SoChoDaDat"], row["GiaNguoiLon"], row["GiaTreEm"], row["ThoiLuong"],
+                            row["MaTour"]))
+        for ma in self.list_xoa:
+            cursor.execute("DELETE FROM TOUR WHERE MaTour = ?", (ma,))
+        count = cursor.fetchone()[0]
+        if count > 0:
+            messagebox.showwarning("Không thể xóa", "Tour này đã có khách đặt! Không thể xóa.")
+            return
+        cursor. commit()  
+
+        messagebox.showinfo("Thông báo", "Lưu dữ liệu xuống Database thành công!")  
         
-        try:
-            # Bước 2: Chuẩn bị dữ liệu từ Treeview
-            inserts = []
-            invalid_rows = []
+        self.list_them.clear()
+        self.list_sua.clear()
+        self.list_xoa.clear()
 
-            for item_id in self.tree.get_children():
-                values = self.tree.item(item_id, "values")
-                
-                try:
-                    ma_tour = str(values[0])
-                    ten_tour = str(values[1])
-                    dia_diem = str(values[2])
-                    mo_ta = str(values[3])
-                    ngay_khoihanh = datetime.strptime(values[4], "%d/%m/%Y").date()
-                    socho_toi_da = int(values[5])
-                    socho_da_dat = int(values[6])
-                    gia_nguoilon = float(values[7])
-                    gia_treem = float(values[8])
-                    thoi_luong = int(values[9])
-
-                    inserts.append((ma_tour, ten_tour, dia_diem, mo_ta, ngay_khoihanh,
-                                socho_toi_da, socho_da_dat, gia_nguoilon, gia_treem, thoi_luong))
-                
-                except (ValueError, TypeError, IndexError) as e:
-                    invalid_rows.append(f"Tour {values[0] if len(values) > 0 else 'N/A'}: {str(e)}")
-
-            # Thông báo nếu có dòng lỗi
-            if invalid_rows:
-                messagebox.showwarning("Cảnh báo", 
-                    f"Có {len(invalid_rows)} dòng bị lỗi sẽ không được lưu:\n" + 
-                    "\n".join(invalid_rows[:3]) + 
-                    (f"\n... và {len(invalid_rows)-3} lỗi khác" if len(invalid_rows) > 3 else ""))
-
-            # Bước 3: INSERT toàn bộ dữ liệu mới
-            if inserts:
-                cursor.execute("DELETE FROM TOUR")
-                cursor.executemany("""
-                    INSERT INTO TOUR (MaTour, TenTour, DiaDiem, MoTa, NgayKhoiHanh,
-                    SoChoToiDa, SoChoDaDat, GiaNguoiLon, GiaTreEm, ThoiLuong)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, inserts)
-
-            # Commit tất cả thay đổi
-            self.db.conn.commit()
-            
-            messagebox.showinfo("Thành công","Lưu dữ liệu thành công")
-
-        except Exception as e:
-            self.db.conn.rollback()
-            messagebox.showerror("Lỗi", f"Lỗi khi lưu dữ liệu:\n{str(e)}\n\nDữ liệu đã được khôi phục về trạng thái ban đầu.")
-        
-        finally:
-            cursor.close()
 
     def TimKiem(self):
         # Lấy lựa chọn tìm kiếm từ Combobox
