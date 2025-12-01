@@ -139,7 +139,7 @@ class Create_NhanVien(CTkFrame):
         self.entry_TimKiem.place(x=520, y=315)
         
         self.btn_Timkiem = CTkButton(self.frameTop, width=40, height=14, text="🔍",
-                                     font=("Segoe UI", 14, "bold"),
+                                     font=("Segoe UI", 14, "bold"), command=self.TimKiem,
                                      text_color="#FFFFFF")
         self.btn_Timkiem.place(x=855, y=314)   
 
@@ -185,6 +185,8 @@ class Create_NhanVien(CTkFrame):
         list_ChucVu = ["Hướng dẫn viên", "Tư vấn viên"]
         self.cb_ChucVu.configure(values=list_ChucVu)
         
+        list_TimKiem = ["Mã nhân viên", "Họ tên"]
+        self.cb_TimKiem.configure(values=list_TimKiem)
         # Load dữ liệu nhân viên
         sql = """
         SELECT MaNhanVien, HoTen, NgaySinh, GioiTinh, SoDienThoai, 
@@ -392,3 +394,53 @@ class Create_NhanVien(CTkFrame):
         except Exception as e:
             cursor.rollback()
             messagebox.showerror("Lỗi", f"Lỗi khi lưu dữ liệu: {e}")
+            
+    def TimKiem(self):
+        # Lấy lựa chọn tìm kiếm từ Combobox
+        loai_tim = self.cb_TimKiem.get().strip()
+        tu_khoa = self.entry_TimKiem.get().strip().lower()  # chuyển về chữ thường để tìm không phân biệt hoa thường
+
+        if not tu_khoa:
+            messagebox.showwarning("Thông báo", "Vui lòng nhập từ khóa để tìm kiếm!")
+            return
+
+        # Xóa dữ liệu cũ trên Treeview
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+
+        # Lấy tất cả dữ liệu từ database
+        sql = """
+        SELECT MaNhanVien, HoTen, NgaySinh, GioiTinh, SoDienThoai, 
+               Email, ChucVu, NgayVaoLam, DiaChi 
+        FROM NHANVIEN
+        """
+        try:
+            rows = self.db.query(sql)
+            if rows:
+                ketqua = []
+                for row in rows:
+                    # Chọn cột để so sánh dựa trên Combobox
+                    if loai_tim == "Mã nhân viên":
+                        cot_so_sanh = str(row[0])  # DiaDiem
+                    elif loai_tim == "Tên nhân viên":
+                        cot_so_sanh = str(row[1])  # TenTour
+                    else:
+                        cot_so_sanh = ""
+
+                    # So sánh từ khóa
+                    if tu_khoa in cot_so_sanh.lower():
+                        ketqua.append(row)
+
+                # Hiển thị kết quả
+                for row in ketqua:
+                    ngay_sinh = row[2].strftime("%d/%m/%Y") if row[2] and hasattr(row[2], "strftime") else ""
+                    ngay_vao_lam = row[7].strftime("%d/%m/%Y") if row[7] and hasattr(row[7], "strftime") else ""
+                    
+                    self.tree.insert("", "end", values=(
+                        row[0], row[1], ngay_sinh, row[3], row[4], 
+                        row[5], row[6], ngay_vao_lam, row[8]
+                    ))
+            else:
+                messagebox.showinfo("Thông báo", "Không có dữ liệu trong cơ sở dữ liệu.")
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Lỗi khi truy vấn dữ liệu:\n{e}")

@@ -119,7 +119,7 @@ class Create_HoaDon(CTkFrame):
         
         self.btn_Timkiem = CTkButton(self.frameTop, width=40, height=14, text="🔍",
                                      font=("Segoe UI", 14, "bold"),
-                                     text_color="#FFFFFF")
+                                     text_color="#FFFFFF", command=self.TimKiem)
         self.btn_Timkiem.place(x=855, y=314)   
 
 #--------------------------------------
@@ -144,7 +144,6 @@ class Create_HoaDon(CTkFrame):
         self.btn_Luu.place(x=270, y=315)
     
     def load_so_tien(self, *args):
-        """Tự động load số tiền từ DATCHO khi chọn mã đặt chỗ"""
         try:
             ma_dat_cho = self.cb_MaDatCho.get().strip().split(" - ")[0] if self.cb_MaDatCho.get() else ""
             if not ma_dat_cho:
@@ -188,25 +187,43 @@ class Create_HoaDon(CTkFrame):
         list_PhuongThuc = ["Tiền mặt", "Chuyển khoản"]
         self.cb_PhuongThuc.configure(values=list_PhuongThuc)
         
+        list_TimKiem = ["Mã thanh toán", "Mã đặt chỗ"]
+        self.cb_TimKiem.configure(values=list_TimKiem)
         # Load Trạng Thái
         list_TrangThai = ["Đã thanh toán", "Chưa thanh toán"]
         self.cb_TrangThaiTT.configure(values=list_TrangThai)
-        
-        # Load dữ liệu thanh toán
-        sql = """
-        SELECT MaThanhToan, MaDatCho, SoTien, PhuongThuc, NgayThanhToan, TrangThaiTT 
-        FROM THANHTOAN
-        """
+        if BaseForm.UserSession.is_user():
+            sql = """SELECT 
+                        TT.MaThanhToan,
+                        TT.MaDatCho,
+                        T.TenTour,
+                        TT.SoTien,
+                        TT.PhuongThuc,
+                        TT.NgayThanhToan,
+                        TT.TrangThaiTT
+                    FROM THANHTOAN TT
+                    JOIN DATCHO DC ON TT.MaDatCho = DC.MaDatCho
+                    JOIN TOUR T ON DC.MaTour = T.MaTour
+                    WHERE DC.MaKhachHang = ?
+                    ORDER BY TT.NgayThanhToan DESC;
+            """
+            params = (BaseForm.UserSession.current_user,)
+        else:
+            sql = """
+            SELECT MaThanhToan, MaDatCho, SoTien, PhuongThuc, NgayThanhToan, TrangThaiTT 
+            FROM THANHTOAN
+            """
+            params = ()
+            
         try:
-            rows = self.db.query(sql)
+            rows = self.db.query(sql, params)
             if rows:
                 for row in rows:
                     ngay_tt = ""
                     if row[4]:
                         ngay_tt = row[4].strftime("%d/%m/%Y") if hasattr(row[4], "strftime") else str(row[4])
                     
-                    so_tien = f"{row[2]:,.0f}" if row[2] else "0"
-                    
+                    so_tien = row[2]                    
                     self.tree.insert("", "end", values=(
                         row[0], row[1], so_tien, row[3], ngay_tt, row[5]
                     ))
@@ -356,3 +373,50 @@ class Create_HoaDon(CTkFrame):
         except Exception as e:
             cursor.rollback()
             messagebox.showerror("Lỗi", f"Lỗi khi lưu dữ liệu: {e}")
+            
+    def TimKiem(self):
+        # Lấy lựa chọn tìm kiếm từ Combobox
+        loai_tim = self.cb_TimKiem.get().strip()
+        tu_khoa = self.entry_TimKiem.get().strip().lower()  # chuyển về chữ thường để tìm không phân biệt hoa thường
+
+        if not tu_khoa:
+            messagebox.showwarning("Thông báo", "Vui lòng nhập từ khóa để tìm kiếm!")
+            return
+
+        # Xóa dữ liệu cũ trên Treeview
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+
+        # Lấy tất cả dữ liệu từ database
+        sql = "SELECT MaThanhToan, MaDatCho, SoTien, PhuongThuc, NgayThanhToan, TrangThaiTT FROM THANHTOAN"
+        try:
+            rows = self.db.query(sql)
+            if rows:
+                ketqua = []
+                for row in rows:
+                    # Chọn cột để so sánh dựa trên Combobox
+                    if loai_tim == "Mã thanh toán":
+                        cot_so_sanh = str(row[0])  # DiaDiem
+                    elif loai_tim == "Mã đặt chỗ":
+                        cot_so_sanh = str(row[1])  # TenTour
+                    else:
+                        cot_so_sanh = ""
+
+                    # So sánh từ khóa
+                    if tu_khoa in cot_so_sanh.lower():
+                        ketqua.append(row)
+
+                # Hiển thị kết quả
+                for row in ketqua:
+                    ngay_tt = ""
+                    if row[4]:
+                        ngay_tt = row[4].strftime("%d/%m/%Y") if hasattr(row[4], "strftime") else str(row[4])
+                    
+                    so_tien = row[2]                    
+                    self.tree.insert("", "end", values=(
+                        row[0], row[1], so_tien, row[3], ngay_tt, row[5]
+                    ))
+            else:
+                messagebox.showinfo("Thông báo", "Không có dữ liệu trong cơ sở dữ liệu.")
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Lỗi khi truy vấn dữ liệu:\n{e}")

@@ -1,6 +1,6 @@
 from customtkinter import *
 from tkinter import messagebox, ttk
-from Form import FormNhanVien
+from Form import FormDatChoUser
 from Form import BaseForm
 from tkcalendar import DateEntry
 from datetime import datetime
@@ -178,8 +178,22 @@ class Create_TuyenDi(CTkFrame):
     #-------------------------------------- 
 
     def open_form_dat_cho(self):
+        selected = self.tree.selection()
+        if not selected:
+            messagebox.showwarning("Thông báo", "Vui lòng chọn tour cần đặt chỗ!")
+            return
         try:
-            form = FormNhanVien.Create_DatCho()
+            form = FormDatChoUser.Create_DatCho(
+                ma_tour=self.entry_MaTuyen.get().strip(),
+                ten_chuyendi=self.entry_TenTuyen.get().strip(),
+                ten_diadiem=self.entry_TenDiaDiem.get().strip(),
+                mota=self.entry_Mota.get().strip(),
+                ngay_khoihanh=self.date_NgayKhoihanh.get_date().strftime("%d/%m/%Y"),
+                so_chotoi_da= self.entry_ChoToiDa.get().strip(),
+                so_cho_da_dat= self.entry_ChoDaDat.get().strip(),
+                gia_nguoi_lon=self.entry_GiaNguoiLon.get().strip(),
+                gia_tre_em=self.entry_GiaTreEm.get().strip()
+            )
             form.mainloop()
         except Exception as e:
             print(f"Lỗi mở form đặt chỗ: {e}")
@@ -195,11 +209,11 @@ class Create_TuyenDi(CTkFrame):
             # 1. Xóa dữ liệu cũ trên bảng Treeview
             for item in self.tree.get_children():
                 self.tree.delete(item)
-            
+
             sql = "SELECT MaTour, TenTour, DiaDiem, MoTa, NgayKhoiHanh,SoChoToiDa, SoChoDaDat, GiaNguoiLon, GiaTreEm, ThoiLuong FROM TOUR"
             
             try:
-                rows = self.db.query(sql) # Giả sử self.db.query trả về list các tuple
+                rows = self.db.query(sql) 
                 if rows:
                     for row in rows:                
                         ma_tour = row[0]
@@ -213,7 +227,7 @@ class Create_TuyenDi(CTkFrame):
                         
                         cho_toida = row[5]
                         cho_dadat = row[6]
-                        gia_nguoilon = row[7] # Format tiền tệ
+                        gia_nguoilon = row[7]
                         gia_treem = row[8]
                         thoi_luong = row[9]       
                         self.tree.insert("", "end", values=(ma_tour, ten_tour, dia_diem, mo_ta, ngay_khoihanh, cho_toida, cho_dadat, gia_nguoilon, gia_treem, thoi_luong))
@@ -237,7 +251,7 @@ class Create_TuyenDi(CTkFrame):
                 self.date_NgayKhoihanh.set_date(values[4].strip())  
             except:
                 pass 
-            self.entry_ChoToiDa.insert(0, values[5])        # SoChoToiDa
+            self.entry_ChoToiDa.insert(0, values[5])        
             self.entry_ChoDaDat.insert(0, values[6])         
             self.entry_GiaNguoiLon.insert(0, values[7])
             self.entry_GiaTreEm.insert(0, values[8])

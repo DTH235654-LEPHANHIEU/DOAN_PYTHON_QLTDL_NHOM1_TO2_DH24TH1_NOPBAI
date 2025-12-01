@@ -1,7 +1,7 @@
 from customtkinter import *
 from tkinter import messagebox
 from Form import FormDatChoAD
-from Form import BaseForm, FormTuyenDi, FormKhachHang, FormDangNhap, FormHoaDon, FormTrangChu, FormNhanVien
+from Form import BaseForm, FormTuyenDi, FormKhachHang, FormDangNhap, FormHoaDon, FormNhanVien
 
 
 class FormDashboard(CTkFrame):
@@ -20,10 +20,7 @@ class FormDashboard(CTkFrame):
         self.create_left_menu()
         self.create_top_frame()
         self.current_page = None
-        if BaseForm.UserSession.is_admin():
-            self.open_TrangChu(None)
-        else:
-            self.open_TuyenDi(None)
+        self.open_TuyenDi(None)
     # ----------------------------------------
     # TẠO MENU BÊN TRÁI
     # ----------------------------------------
@@ -43,15 +40,13 @@ class FormDashboard(CTkFrame):
         # Tạo từng button
 
         if BaseForm.UserSession.is_admin():
-           self.btn_TrangChu = self.create_menu_button("🏠 Trang Chủ", self.open_TrangChu)    
         #btn dùng cho cả user và admin          
-        self.btn_QuanLyTour = self.create_menu_button("🗺  Tuyến đi", self.open_TuyenDi)
-        self.btn_QuanLyKhachHang = self.create_menu_button("👥  Khách hàng", self.open_KhachHang)
-        self.btn_QuanLyHoaDon = self.create_menu_button("🧾  Hóa đơn", self.open_HoaDon)
-        
+            self.btn_QuanLyTour = self.create_menu_button("🗺  Tuyến đi", self.open_TuyenDi)
+            self.btn_QuanLyKhachHang = self.create_menu_button("👥  Khách hàng", self.open_KhachHang)
+            self.btn_QuanLyHoaDon = self.create_menu_button("🧾  Hóa đơn", self.open_HoaDon)
+            self.btn_QuanLyDichVu = self.create_menu_button("🛎  Đặt chỗ", self.open_DatCho_AD)
         if BaseForm.UserSession.is_admin():
             self.btn_QuanLyNhanVien = self.create_menu_button("👨‍💼  Nhân viên", self.open_NhanVien)
-            self.btn_QuanLyDichVu = self.create_menu_button("🛎  Đặt chỗ", self.open_DatCho_AD)
         self.btn_DangXuat = self.create_menu_button("📤  Đăng xuất", self.logout)
         
 
@@ -104,13 +99,6 @@ class FormDashboard(CTkFrame):
     # ----------------------------------------
     # CÁC HÀM XỬ LÝ NÚT BẤM (TRANG)
     # ----------------------------------------
-    def open_TrangChu(self, b):
-        self.select_button(self.btn_TrangChu)
-        self.clear_content()
-        if self.current_page is not None:
-            self.current_page.destroy()
-        self.current_page = FormTrangChu.Create_TrangChu(self.frame_content)
-        self.current_page.pack(fill="both", expand=True)
 
     def open_TuyenDi(self, b):
         self.select_button(self.btn_QuanLyTour)

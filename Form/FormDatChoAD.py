@@ -113,7 +113,7 @@ class Create_DatCho(CTkFrame):
         self.date_NgayDat.place(x=510, y=185) 
     #TongTien
         self.lb_TongTien = CTkLabel(self.frameTop, text= "Tổng tiền", font=("Segoe UI", 14))
-        self.lb_TongTien.place(x=400, y = 220)
+        self.lb_TongTien.place(x=415, y = 220)
         self.entry_TongTien = CTkEntry(self.frameTop, width=250, height=20, fg_color="#928FA7")
         self.entry_TongTien.place(x=510, y=225)  
         self.entry_TongTien.configure(state="disabled")       
@@ -129,7 +129,7 @@ class Create_DatCho(CTkFrame):
         
         self.btn_Timkiem = CTkButton(self.frameTop, width=40, height=14, text="🔍",
                                      font=("Segoe UI", 14, "bold"),
-                                     text_color="#FFFFFF")
+                                     text_color="#FFFFFF", command=self.TimKiem)
         self.btn_Timkiem.place(x=855,y=314)   
 #--------------------------------------
 # TẠO CÁC BUTTON
@@ -140,15 +140,14 @@ class Create_DatCho(CTkFrame):
             self.btn_Them = CTkButton(self.frameTop, width=70, height=25, text="➕ Thêm",
                                     fg_color="#1D8D13", font=("Segoe UI", 14, "bold"), command=self.Them)
             self.btn_Them.place(x=20, y = 315)            
-    #Xóa
-            self.btn_Xoa = CTkButton(self.frameTop, width=70, height=25, text="🗑️Xóa",
-                                    fg_color="#8D1313", font=("Segoe UI", 14, "bold"), command=self.Xoa)
-            self.btn_Xoa.place(x=100, y = 315)
     #Sửa
             self.btn_Sua = CTkButton(self.frameTop, width=70, height=25, text="✍️ Sửa",
                                     fg_color="#6A138D", font=("Segoe UI", 14, "bold"), command=self.Sua)
-            
             self.btn_Sua.place(x=190, y = 315)
+    #Xóa
+        self.btn_Xoa = CTkButton(self.frameTop, width=70, height=25, text="🗑️Xóa",
+                                    fg_color="#8D1313", font=("Segoe UI", 14, "bold"), command=self.Xoa)
+        self.btn_Xoa.place(x=100, y = 315)
     #Lưu 
         self.btn_Luu = CTkButton(self.frameTop, width=70, height=25, text="♻️ Lưu",
                                     fg_color="#132F8D", font=("Segoe UI", 14, "bold"), command=self.Luu)
@@ -197,14 +196,27 @@ class Create_DatCho(CTkFrame):
         list_TrangThai = ["Đã đặt", "Chưa đặt"]
         self.cb_TrangThai.configure(values= [])
         self.cb_TrangThai.configure(values=list_TrangThai)
+        
+        list_Timkiem = ["Mã đặt chỗ", "Mã khách hàng", "Mã nhân viên", "Mã tuyến"]
+        self.cb_TimKiem.configure(values= [])
+        self.cb_TimKiem.configure(values=list_Timkiem)
         # Load dữ liệu đặt chỗ
-        sql = "SELECT MaDatCho, MaKhachHang, MaNhanVien, MaTour, SoLuongNguoiLon, SoLuongTreEm, TongTien, NgayDat, TrangThaiBooking FROM DATCHO"
+        if BaseForm.UserSession.is_user():
+            sql = """SELECT MaDatCho,MaKhachHang, MaNhanVien,MaTour, SoLuongNguoiLon, SoLuongTreEm,TongTien, NgayDat,TrangThaiBooking
+                    FROM DATCHO
+                    WHERE MaKhachHang = ?
+                    ORDER BY NgayDat DESC;
+            """
+            params = (BaseForm.UserSession.current_user,)
+        else:
+            sql = "SELECT MaDatCho, MaKhachHang, MaNhanVien, MaTour, SoLuongNguoiLon, SoLuongTreEm, TongTien, NgayDat, TrangThaiBooking FROM DATCHO"
+            params = ()
         try:
-            rows = self.db.query(sql)
+            rows = self.db.query(sql, params)
             if rows:
                 for row in rows:
                     ngay_dat = row[7].strftime("%d/%m/%Y") if hasattr(row[7], "strftime") else str(row[7])
-                    tong_tien = f"{row[6]:,.0f}" if row[6] else "0"
+                    tong_tien = row[6]
                     self.tree.insert("", "end", values=(
                         row[0], row[1], row[2], row[3], row[4], row[5], 
                         tong_tien, ngay_dat, row[8]
@@ -346,3 +358,52 @@ class Create_DatCho(CTkFrame):
         except Exception as e:
             cursor.rollback()
             messagebox.showerror("Lỗi", f"Lỗi khi lưu dữ liệu: {e}")
+            
+    def TimKiem(self):
+        # Lấy lựa chọn tìm kiếm từ Combobox
+        loai_tim = self.cb_TimKiem.get().strip()
+        tu_khoa = self.entry_TimKiem.get().strip().lower()  # chuyển về chữ thường để tìm không phân biệt hoa thường
+
+        if not tu_khoa:
+            messagebox.showwarning("Thông báo", "Vui lòng nhập từ khóa để tìm kiếm!")
+            return
+
+        # Xóa dữ liệu cũ trên Treeview
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+
+        # Lấy tất cả dữ liệu từ database
+        sql = "SELECT MaDatCho, MaKhachHang, MaNhanVien, MaTour, SoLuongNguoiLon, SoLuongTreEm, TongTien, NgayDat, TrangThaiBooking FROM DATCHO"
+        try:
+            rows = self.db.query(sql)
+            if rows:
+                ketqua = []
+                for row in rows:
+                    # Chọn cột để so sánh dựa trên Combobox
+                    if loai_tim == "Mã đặt chỗ":
+                        cot_so_sanh = str(row[0])  # DiaDiem
+                    elif loai_tim == "Mã khách hàng":
+                        cot_so_sanh = str(row[1])  # TenTour
+                    elif loai_tim == "Số mã nhân viên":
+                        cot_so_sanh = str(row[2])  # ThoiLuong
+                    elif loai_tim == "Mã tuyến":
+                        cot_so_sanh = str(row[3])
+                    else:
+                        cot_so_sanh = ""
+
+                    # So sánh từ khóa
+                    if tu_khoa in cot_so_sanh.lower():
+                        ketqua.append(row)
+
+                # Hiển thị kết quả
+                for row in ketqua:
+                    ngay_dat = row[7].strftime("%d/%m/%Y") if hasattr(row[7], "strftime") else str(row[7])
+                    tong_tien = row[6]
+                    self.tree.insert("", "end", values=(
+                        row[0], row[1], row[2], row[3], row[4], row[5], 
+                        tong_tien, ngay_dat, row[8]
+                    ))
+            else:
+                messagebox.showinfo("Thông báo", "Không có dữ liệu trong cơ sở dữ liệu.")
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Lỗi khi truy vấn dữ liệu:\n{e}")

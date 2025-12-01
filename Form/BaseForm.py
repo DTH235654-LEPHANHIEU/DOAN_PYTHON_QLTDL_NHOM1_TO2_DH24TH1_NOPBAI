@@ -28,7 +28,6 @@ class ConnectionDatabase:
         except Exception as e:
             print(e)
             return []
-
 # INSERT – UPDATE – DELETE
     def execute(self, sql, params=None):
         try:
@@ -41,10 +40,10 @@ class ConnectionDatabase:
         except Exception as e:
             print(e)
             return False
+#Đóng kết nối
     def close(self):
         """Đóng kết nối khi không dùng nữa"""
-        self.conn.close()
-        
+        self.conn.close()    
 #Lưu thông tin người dùng hiện tại
 class UserSession:
     current_user = None

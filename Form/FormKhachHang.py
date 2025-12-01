@@ -181,10 +181,16 @@ class Create_KhachHang(CTkFrame):
         self.cb_TimKiem.configure(values= list_timkiem)
         if list_timkiem:
             self.cb_TimKiem.set(list_timkiem[0])
-        sql = "SELECT *FROM KHACHHANG"
+        
+        if BaseForm.UserSession.is_user():
+            sql = "SELECT *FROM KHACHHANG WHERE MaKhachHang = ?"
+            params = (BaseForm.UserSession.current_user,)
+        else:
+            sql = "SELECT *FROM KHACHHANG"
+            params = ()
         
         try:
-            rows = self.db.query(sql)
+            rows = self.db.query(sql, params)
             if rows:
                 for row in rows:
                     ma_kh = row[0]

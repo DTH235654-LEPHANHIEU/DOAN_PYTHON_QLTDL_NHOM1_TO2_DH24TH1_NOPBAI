@@ -125,7 +125,7 @@ ADD CONSTRAINT FK_DATCHO_TOUR FOREIGN KEY (MaTour) REFERENCES TOUR(MaTour) ON DE
 GO
 
 ALTER TABLE THANHTOAN
-ADD CONSTRAINT FK_THANHTOAN_DATCHO FOREIGN KEY (MaDatCho) REFERENCES DATCHO(MaDatCho);
+ADD CONSTRAINT FK_THANHTOAN_DATCHO FOREIGN KEY (MaDatCho) REFERENCES DATCHO(MaDatCho) ON DELETE CASCADE;
 GO
 
 -- =============================================
@@ -172,6 +172,32 @@ BEGIN
 END;
 GO
 
+CREATE TRIGGER TRG_AutoCreateThanhToan
+ON DATCHO
+AFTER INSERT
+AS
+BEGIN
+    -- Tạo mã thanh toán mới TTxxx
+    DECLARE @NewTT CHAR(5);
+
+    SELECT @NewTT = 
+        'TT' + RIGHT('000' + CAST(
+            (SELECT ISNULL(MAX(CAST(SUBSTRING(MaThanhToan, 3, 3) AS INT)), 0) + 1 FROM THANHTOAN)
+        AS VARCHAR(3)), 3);
+
+    -- Thêm hóa đơn mới tương ứng đơn đặt chỗ
+    INSERT INTO THANHTOAN (MaThanhToan, MaDatCho, SoTien, PhuongThuc, NgayThanhToan, TrangThaiTT)
+    SELECT 
+        @NewTT, 
+        i.MaDatCho,
+        0,                -- chưa thanh toán
+        NULL,             -- chưa có phương thức
+        NULL,             -- chưa thanh toán
+        N'Chưa thanh toán'
+    FROM inserted i;
+END;
+GO
+
 CREATE TRIGGER TRG_TinhTongTien
 ON DATCHO
 AFTER INSERT, UPDATE
@@ -187,12 +213,62 @@ BEGIN
     WHERE MaDatCho IN (SELECT MaDatCho FROM inserted);
 END;
 GO
+
+CREATE TRIGGER trg_Auto_MaDatCho
+ON DATCHO
+INSTEAD OF INSERT
+AS
+BEGIN
+    DECLARE @inputMa CHAR(5);
+
+    -- Lấy mã đặt chỗ từ bản ghi được INSERT
+    SELECT @inputMa = MaDatCho FROM inserted;
+
+    IF (@inputMa IS NULL OR LTRIM(RTRIM(@inputMa)) = '')
+    BEGIN
+        -- === TRƯỜNG HỢP: KHÔNG NHẬP MÃ → TỰ SINH ===
+
+        DECLARE @lastMa CHAR(5);
+
+        -- Lấy mã lớn nhất hiện có
+        SELECT TOP 1 @lastMa = MaDatCho
+        FROM DATCHO
+        ORDER BY MaDatCho DESC;
+
+        -- Nếu chưa có dữ liệu
+        IF (@lastMa IS NULL)
+            SET @lastMa = 'DC000';
+
+        -- Tăng số
+        DECLARE @num INT = CAST(SUBSTRING(@lastMa, 3, 3) AS INT) + 1;
+
+        -- Tạo mã mới
+        SET @inputMa = 'DC' + RIGHT('000' + CAST(@num AS VARCHAR(3)), 3);
+    END
+
+    -- === CHÈN DỮ LIỆU (DÙNG MÃ NHẬP HOẶC MÃ TỰ SINH) ===
+    INSERT INTO DATCHO
+    (MaDatCho, MaKhachHang, MaNhanVien, MaTour,
+     SoLuongNguoiLon, SoLuongTreEm, TongTien, NgayDat, TrangThaiBooking)
+    SELECT
+        @inputMa,
+        MaKhachHang,
+        MaNhanVien,
+        MaTour,
+        SoLuongNguoiLon,
+        SoLuongTreEm,
+        TongTien,
+        NgayDat,
+        TrangThaiBooking
+    FROM inserted;
+END;
+GO
 -- =============================================
 -- 1. THÊM TAIKHOAN
 -- =============================================
 INSERT INTO TAIKHOAN (TenDangNhap) VALUES
 ('nv004'), ('nv005'), ('nv006'), ('nv007'), ('nv008'),
-('khach5'), ('khach6'), ('khach7'), ('khach8'), ('manager');
+('KH005'),('KH006'),('KH007'),('KH008'),('KH009'),('KH010'),('KH011'),('KH012');
 GO
 INSERT INTO TAIKHOAN (TenDangNhap) VALUES
 ('admin');
@@ -215,14 +291,14 @@ INSERT INTO KHACHHANG (
     MaKhachHang, HoTen, NgaySinh, CCCD, GioiTinh, 
     SoDienThoai, Email, DiaChi, SoTourDaDat
 ) VALUES
-('K005', N'Hoàng Văn Nam', '1992-07-07', '031234567890', N'Nam', '0977889900', 'nam.hoang@company.com', N'56 Lý Thường Kiệt, Huế', 0),
-('K006', N'Vũ Thị Lan', '1989-11-11', '031234567891', N'Nữ', '0966778899', 'lan.vu@gmail.com', N'200 Nguyễn Văn Cừ, Q5', 0),
-('K007', N'Đặng Quốc Bảo', '1993-04-22', '031234567892', N'Nam', '0955667788', 'bao.dang@yahoo.com', N'300 Phạm Văn Đồng, Gò Vấp', 0),
-('K008', N'Ngô Thị Thu', '1991-10-05', '031234567893', N'Nữ', '0944778899', 'thu.ngo@outlook.com', N'400 Trường Chinh, Tân Bình', 0),
-('K009', N'Lý Văn Hùng', '1986-08-14', '031234567894', N'Nam', '0928899001', 'hung.ly@gmail.com', N'500 Cách Mạng Tháng 8, Q3', 0),
-('K010', N'Mai Thị Hồng', '1994-03-27', '031234567895', N'Nữ', '0939900112', 'hong.mai@yahoo.com', N'600 Lê Văn Việt, Q9', 0),
-('K011', N'Phan Văn Long', '1984-12-01', '031234567896', N'Nam', '0940011223', 'long.phan@outlook.com', N'700 Huỳnh Tấn Phát, Q7', 0),
-('K012', N'Tạ Thị Dung', '1990-06-19', '031234567897', N'Nữ', '0951122334', 'dung.ta@gmail.com', N'800 Nguyễn Thị Minh Khai, Q3', 0);
+('KH005', N'Hoàng Văn Nam', '1992-07-07', '031234567890', N'Nam', '0977889900', 'nam.hoang@company.com', N'56 Lý Thường Kiệt, Huế', 0),
+('KH006', N'Vũ Thị Lan', '1989-11-11', '031234567891', N'Nữ', '0966778899', 'lan.vu@gmail.com', N'200 Nguyễn Văn Cừ, Q5', 0),
+('KH007', N'Đặng Quốc Bảo', '1993-04-22', '031234567892', N'Nam', '0955667788', 'bao.dang@yahoo.com', N'300 Phạm Văn Đồng, Gò Vấp', 0),
+('KH008', N'Ngô Thị Thu', '1991-10-05', '031234567893', N'Nữ', '0944778899', 'thu.ngo@outlook.com', N'400 Trường Chinh, Tân Bình', 0),
+('KH009', N'Lý Văn Hùng', '1986-08-14', '031234567894', N'Nam', '0928899001', 'hung.ly@gmail.com', N'500 Cách Mạng Tháng 8, Q3', 0),
+('KH010', N'Mai Thị Hồng', '1994-03-27', '031234567895', N'Nữ', '0939900112', 'hong.mai@yahoo.com', N'600 Lê Văn Việt, Q9', 0),
+('KH011', N'Phan Văn Long', '1984-12-01', '031234567896', N'Nam', '0940011223', 'long.phan@outlook.com', N'700 Huỳnh Tấn Phát, Q7', 0),
+('KH012', N'Tạ Thị Dung', '1990-06-19', '031234567897', N'Nữ', '0951122334', 'dung.ta@gmail.com', N'800 Nguyễn Thị Minh Khai, Q3', 0);
 GO
 
 
@@ -246,16 +322,17 @@ GO
 -- 5. THÊM DATCHO (15 booking mới)
 -- =============================================
 INSERT INTO DATCHO (MaDatCho, MaKhachHang, MaNhanVien, MaTour, SoLuongNguoiLon, SoLuongTreEm, NgayDat, TrangThaiBooking)VALUES
-('DC005', 'K005', 'NV004', 'T005', 1, 1, '2025-11-25 15:30', N'Đã đặt'),
-('DC006', 'K006', 'NV005', 'T006', 4, 0, '2025-11-26 08:45', N'Đã đặt'),
-('DC009', 'K008', 'NV007', 'T007', 3, 1, '2025-11-28 16:00', N'Đã đặt'),
-('DC013', 'K009', 'NV006', 'T011', 3, 2, '2025-11-29 14:00', N'Đã đặt'),
-('DC014', 'K010', 'NV007', 'T012', 1, 0, '2025-11-29 16:30', N'Đã đặt'),
-('DC015', 'K011', 'NV008', 'T013', 2, 1, '2025-11-30 10:00', N'Đã đặt'),
-('DC018', 'K006', 'NV004', 'T006', 1, 0, '2025-12-01 14:15', N'Chưa đặt'),
-('DC019', 'K007', 'NV005', 'T008', 5, 0, '2025-12-02 11:00', N'Đã đặt');
+('DC005', 'KH005', 'NV004', 'T005', 1, 1, '2025-11-25 15:30', N'Đã đặt'),
+('DC006', 'KH006', 'NV005', 'T006', 4, 0, '2025-11-26 08:45', N'Đã đặt'),
+('DC009', 'KH008', 'NV007', 'T007', 3, 1, '2025-11-28 16:00', N'Đã đặt'),
+('DC013', 'KH009', 'NV006', 'T011', 3, 2, '2025-11-29 14:00', N'Đã đặt'),
+('DC014', 'KH010', 'NV007', 'T012', 1, 0, '2025-11-29 16:30', N'Đã đặt'),
+('DC015', 'KH011', 'NV008', 'T013', 2, 1, '2025-11-30 10:00', N'Đã đặt'),
+('DC018', 'KH006', 'NV004', 'T006', 1, 0, '2025-12-01 14:15', N'Chưa đặt'),
+('DC019', 'KH007', 'NV005', 'T008', 5, 0, '2025-12-02 11:00', N'Đã đặt');
 GO
-
+INSERT INTO DATCHO (MaDatCho, MaKhachHang, MaNhanVien, MaTour, SoLuongNguoiLon, SoLuongTreEm, NgayDat, TrangThaiBooking)VALUES
+('DC020', 'KH005', 'NV004', 'T005', 1, 1, '2025-11-25 15:30', N'Đã đặt')
 -- =============================================
 -- 6. THÊM THANHTOAN (15 thanh toán mới)
 -- =============================================
@@ -285,3 +362,29 @@ INSERT INTO TOUR VALUES
 
 update TOUR set TenTour = 'Hieu'
 where MaTour = 'T005'
+
+SELECT MaTour, TenTour, DiaDiem, MoTa, NgayKhoiHanh,SoChoToiDa, SoChoDaDat, GiaNguoiLon, GiaTreEm, ThoiLuong
+FROM TOUR
+WHERE MaTour = 'T005'
+
+        SELECT MaTour, TenTour, DiaDiem, MoTa, NgayKhoiHanh,
+               SoChoToiDa, SoChoDaDat, GiaNguoiLon, GiaTreEm, ThoiLuong
+        FROM TOUR
+        WHERE MaTour IN (
+            SELECT MaTour
+            FROM DATCHO
+            WHERE MaKhachHang = 'KH005')
+
+SELECT 
+    TT.MaThanhToan,
+    TT.MaDatCho,
+    T.TenTour,
+    TT.SoTien,
+    TT.PhuongThuc,
+    TT.NgayThanhToan,
+    TT.TrangThaiTT
+FROM THANHTOAN TT
+JOIN DATCHO DC ON TT.MaDatCho = DC.MaDatCho
+JOIN TOUR T ON DC.MaTour = T.MaTour
+WHERE DC.MaKhachHang = 'KH005'
+ORDER BY TT.NgayThanhToan DESC;
