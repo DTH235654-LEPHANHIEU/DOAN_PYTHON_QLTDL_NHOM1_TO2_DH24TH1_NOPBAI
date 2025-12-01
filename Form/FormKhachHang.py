@@ -11,7 +11,6 @@ class Create_KhachHang(CTkFrame):
         self.Create_frameBottom()
         self.Create_frameTop()
         self.load_data()
-        
         self.list_them = []
         self.list_xoa = []
         self.list_sua = []

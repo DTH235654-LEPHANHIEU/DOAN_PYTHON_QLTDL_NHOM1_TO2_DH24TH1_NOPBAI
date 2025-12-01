@@ -1,7 +1,9 @@
 from customtkinter import *
-from tkinter import messagebox, ttk
+from tkinter import messagebox, ttk, filedialog
 from tkcalendar import DateEntry
 from Form import BaseForm
+import openpyxl
+from openpyxl.styles import Font, Alignment
 
 class Create_DatCho(CTkFrame):
     def __init__(self, parent):
@@ -144,6 +146,9 @@ class Create_DatCho(CTkFrame):
             self.btn_Sua = CTkButton(self.frameTop, width=70, height=25, text="✍️ Sửa",
                                     fg_color="#6A138D", font=("Segoe UI", 14, "bold"), command=self.Sua)
             self.btn_Sua.place(x=190, y = 315)
+    #Xuat Excel
+            self.btn_XuatExcel = CTkButton(self.frameTop, width=120, height=25, text="📤 Xuất Excel", command=self.XuatExcel)
+            self.btn_XuatExcel.place(x=350, y = 315)
     #Xóa
         self.btn_Xoa = CTkButton(self.frameTop, width=70, height=25, text="🗑️Xóa",
                                     fg_color="#8D1313", font=("Segoe UI", 14, "bold"), command=self.Xoa)
@@ -151,7 +156,49 @@ class Create_DatCho(CTkFrame):
     #Lưu 
         self.btn_Luu = CTkButton(self.frameTop, width=70, height=25, text="♻️ Lưu",
                                     fg_color="#132F8D", font=("Segoe UI", 14, "bold"), command=self.Luu)
-        self.btn_Luu.place(x=270, y = 315)  
+        self.btn_Luu.place(x=270, y = 315)
+    
+    def XuatExcel(self):
+        # Lấy dữ liệu từ Treeview
+        rows = [self.tree.item(item, "values") for item in self.tree.get_children()]
+        if not rows:
+            messagebox.showwarning("Thông báo", "Không có dữ liệu để xuất Excel!")
+            return
+
+        # Hỏi người dùng chọn nơi lưu file
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".xlsx",
+            filetypes=[("Excel files", "*.xlsx")],
+            title="Lưu file Excel"
+        )
+        if not file_path:
+            return  
+
+        # Tạo workbook mới
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Danh sách đặt chỗ"
+
+        # Tiêu đề cột
+        columns = ["Mã Đặt Chỗ", "Mã Khách Hàng", "Mã Nhân Viên", "Mã Tour",
+                "Người Lớn", "Trẻ Em", "Tổng Tiền", "Ngày Đặt", "Trạng Thái"]
+        ws.append(columns)
+
+        # Định dạng tiêu đề
+        for col in range(1, len(columns) + 1):
+            ws.cell(row=1, column=col).font = Font(bold=True)
+            ws.cell(row=1, column=col).alignment = Alignment(horizontal="center")
+
+        # Thêm dữ liệu
+        for row in rows:
+            ws.append(row)
+
+        # Lưu file
+        try:
+            wb.save(file_path)
+            messagebox.showinfo("Thành công", f"Xuất Excel thành công:\n{file_path}")
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Không thể lưu file Excel:\n{e}")    
             
     def clear_entries(self):
         self.entry_MaDatCho.delete(0, "end")

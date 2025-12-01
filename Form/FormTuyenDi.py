@@ -172,6 +172,8 @@ class Create_TuyenDi(CTkFrame):
         self.btn_Luu = CTkButton(self.frameTop, width=70, height=25, text="♻️ Lưu",
                                     fg_color="#132F8D", font=("Segoe UI", 14, "bold"), command=self.Luu)
         self.btn_Luu.place(x=270, y = 315)   
+    
+    
 
     #--------------------------------------
     # CÁC HÀM CHỨC NĂNG CỦA CHƯƠNG TRÌNH
@@ -390,10 +392,6 @@ class Create_TuyenDi(CTkFrame):
                             row["MaTour"]))
         for ma in self.list_xoa:
             cursor.execute("DELETE FROM TOUR WHERE MaTour = ?", (ma,))
-        count = cursor.fetchone()[0]
-        if count > 0:
-            messagebox.showwarning("Không thể xóa", "Tour này đã có khách đặt! Không thể xóa.")
-            return
         cursor. commit()  
 
         messagebox.showinfo("Thông báo", "Lưu dữ liệu xuống Database thành công!")  

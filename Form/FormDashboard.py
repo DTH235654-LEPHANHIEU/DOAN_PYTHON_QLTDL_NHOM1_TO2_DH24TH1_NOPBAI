@@ -6,11 +6,11 @@ from Form import BaseForm, FormTuyenDi, FormKhachHang, FormDangNhap, FormHoaDon,
 
 class FormDashboard(CTkFrame):
     def __init__(self, root):
-        super().__init__(root, fg_color="white")      # Frame chính
+        super().__init__(root)      # Frame chính
         self.root = root
         self.root.geometry("1100x600")
         self.root.title("QUẢN LÝ TUYẾN DU LỊCH")
-        self.root.resizable(False, False)
+        self.root.resizable(True, True)
         set_appearance_mode("light")
         BaseForm.center_window(self.root)
 

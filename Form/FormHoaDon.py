@@ -223,7 +223,7 @@ class Create_HoaDon(CTkFrame):
                     if row[4]:
                         ngay_tt = row[4].strftime("%d/%m/%Y") if hasattr(row[4], "strftime") else str(row[4])
                     
-                    so_tien = row[2]                    
+                    so_tien = "{:,.0f} VND".format(row[2])                    
                     self.tree.insert("", "end", values=(
                         row[0], row[1], so_tien, row[3], ngay_tt, row[5]
                     ))
